@@ -46,16 +46,11 @@ def handle_http_for_login(pkt):
                 and user_dict.get((response_usr_name, response_dst, response_src)) is not None:
             cursor = db_connector.cursor()
             sql = "insert into user_ip_dynamic_table (user_name,user_ip) values (\'%s\',\'%s\')"\
-                  % (response_usr_name, response_dst);
-            print(sql)
-            try:
-                # 执行sql语句
-                cursor.execute(sql)
-                # 提交到数据库执行
-                db_connector.commit()
-            except:
-                # 如果发生错误则回滚
-                db_connector.rollback()
+                  % (response_usr_name, response_dst)
+            # 执行sql语句
+            cursor.execute(sql)
+            # 提交到数据库执行
+            db_connector.commit()
 
 
 def init_config(config_file):
@@ -64,7 +59,7 @@ def init_config(config_file):
         return config
 
 
-def main():
+def record_user_ip():
     consumer = KafkaConsumer(args_config['mq']['traffic_topic'], bootstrap_servers=args_config['mq']['server'])
     for bytes_stream in consumer:
         pkt = pickle.loads(bytes_stream.value)
@@ -80,7 +75,7 @@ if __name__ == '__main__':
                                    password=args_config['mysql']['passwd'],
                                    database=args_config['mysql']['db_name'])
     user_dict = {}
-    main()
+    record_user_ip()
     db_connector.close()
 
 # print(pkt['http'])
