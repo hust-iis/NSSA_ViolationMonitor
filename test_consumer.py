@@ -45,6 +45,12 @@ def handle_http_for_login(pkt):
         if response_response_code_desc == 'OK' \
                 and user_dict.get((response_usr_name, response_dst, response_src)) is not None:
             cursor = db_connector.cursor()
+            sql = "select count(*) from user_ip_dynamic_table where user_name = \'%s\' and user_ip = \'%s\'" \
+                  % (response_usr_name, response_dst)
+            cursor.execute(sql)
+            result = cursor.fetchone()
+            if result[0] >= 1:
+                return
             sql = "insert into user_ip_dynamic_table (user_name,user_ip) values (\'%s\',\'%s\')"\
                   % (response_usr_name, response_dst)
             # 执行sql语句
@@ -60,7 +66,7 @@ def init_config(config_file):
 
 
 def record_user_ip():
-    consumer = KafkaConsumer(args_config['mq']['traffic_topic'], bootstrap_servers=args_config['mq']['server'])
+    consumer = KafkaConsumer(args_config['mq']['traffic_topic'], group_id='group1', bootstrap_servers=args_config['mq']['server'])
     for bytes_stream in consumer:
         pkt = pickle.loads(bytes_stream.value)
         if judge_http(pkt):
