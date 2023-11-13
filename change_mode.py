@@ -87,13 +87,13 @@ def intercept_mode_for_http(pkt):
         print("in white table")
 
 
-@server.route('/change', methods=['post'])
+@server.route('/change-mode', methods=['post'])
 def change_mode():
     req = request.get_json()
     global now_mode
-    if req['status'] == 'learn':
+    if int(req['status']) == LEARNING_MODE:
         now_mode = LEARNING_MODE
-    elif req['status'] == 'intercept':
+    elif int(req['status']) == INTERCEPT_MODE:
         now_mode = INTERCEPT_MODE
     else:
         return jsonify(
