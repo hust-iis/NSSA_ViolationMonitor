@@ -3,6 +3,7 @@ from threading import Thread
 import flask
 import pymysql
 import yaml
+from flask import request, jsonify
 from kafka import KafkaConsumer
 import pickle
 import dynamic_record
@@ -86,18 +87,27 @@ def intercept_mode_for_http(pkt):
         print("in white table")
 
 
-@server.route('/learn', methods=['get', 'post'])
-def change_learn_to_intercept():
+@server.route('/change', methods=['post'])
+def change_mode():
+    req = request.get_json()
     global now_mode
-    now_mode = INTERCEPT_MODE
-    return '200'
-
-
-@server.route('/intercept', methods=['get', 'post'])
-def change_intercept_to_learn():
-    global now_mode
-    now_mode = LEARNING_MODE
-    return '200'
+    if req['status'] == 'learn':
+        now_mode = LEARNING_MODE
+    elif req['status'] == 'intercept':
+        now_mode = INTERCEPT_MODE
+    else:
+        return jsonify(
+            {
+                'code': 1000,
+                'msg': 'parameters error'
+            })
+    return jsonify(
+        {
+            'code': 200,
+            'msg': 'success',
+            'data': None
+        }
+    )
 
 
 def judge_mode():
