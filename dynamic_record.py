@@ -7,6 +7,7 @@ RESPONSE_PACKET = 1
 REQUEST_PACKET = 0
 
 
+# 判断流量包是否是http包
 def judge_http(pkt):
     try:
         if pkt.http:
@@ -17,6 +18,7 @@ def judge_http(pkt):
         return False
 
 
+# 判断流量包是http请求包还是http回包
 def judge_request_or_response(pkt):
     try:
         if pkt.http.response_code:
@@ -27,7 +29,10 @@ def judge_request_or_response(pkt):
         return REQUEST_PACKET
 
 
+# 处理http登录包
 def handle_http_for_login(pkt):
+    # 如果是登录包则记录到字典中，等到收到登录成功到回包后将，user_name 和 ip
+    # 存储到数据库中
     if judge_request_or_response(pkt) == REQUEST_PACKET:
         if pkt.http.request_uri != '/user/login':
             return
@@ -42,6 +47,7 @@ def handle_http_for_login(pkt):
         response_dst = pkt.ip.dst
         response_response_code_desc = pkt.http.response_code_desc
         response_usr_name = pkt['json'].get_field('value_string').all_fields[2].showname_value
+        # 如果登录成功则存储到数据库中，并将元组从字典中删除
         if response_response_code_desc == 'OK' \
                 and user_dict.get((response_usr_name, response_dst, response_src)) is not None:
             cursor = db_connector.cursor()
@@ -51,12 +57,14 @@ def handle_http_for_login(pkt):
             result = cursor.fetchone()
             if result[0] >= 1:
                 return
-            sql = "insert into user_ip_dynamic_table (user_name,user_ip) values (\'%s\',\'%s\')"\
+            sql = "insert into user_ip_dynamic_table (user_name,user_ip) values (\'%s\',\'%s\')" \
                   % (response_usr_name, response_dst)
             # 执行sql语句
             cursor.execute(sql)
             # 提交到数据库执行
             db_connector.commit()
+            # 记录成功后删除字典
+            del user_dict[(response_usr_name, response_dst, response_src)]
 
 
 def init_config(config_file):
@@ -64,9 +72,10 @@ def init_config(config_file):
         config = yaml.load(f, Loader=yaml.Loader)
         return config
 
-
+# 持续监听并记录user_name 和 ip
 def record_user_ip():
-    consumer = KafkaConsumer(args_config['mq']['traffic_topic'], group_id='group1', bootstrap_servers=args_config['mq']['server'])
+    consumer = KafkaConsumer(args_config['mq']['traffic_topic'], group_id='group1',
+                             bootstrap_servers=args_config['mq']['server'])
     for bytes_stream in consumer:
         pkt = pickle.loads(bytes_stream.value)
         if judge_http(pkt):
@@ -83,29 +92,3 @@ if __name__ == '__main__':
     user_dict = {}
     record_user_ip()
     db_connector.close()
-
-# print(pkt['http'])
-# print(type(pkt['json']))
-# print(pkt['json'].field_names)
-# print(pkt['json'].get_field('value_string').all_fields)
-# print(pkt['json'].get_field('value_string').all_fields[0].showname_value)
-# try:
-#     print(pkt['http'])
-# except AttributeError as e:
-#     print(1)
-# print(pkt.http)
-# print(pkt)
-# protocol = pkt.transport_layer
-# src_addr = pkt.ip.src
-# src_port = pkt[pkt.transport_layer].srcport
-# dst_addr = pkt.ip.dst
-# dst_port = pkt[pkt.transport_layer].dstport
-# print('%s  %s:%s --> %s:%s' % (protocol, src_addr, src_port, dst_addr, dst_port))
-# print(http_layer_pkt)
-# print(http_layer_pkt.host)
-# print(http_layer_pkt.request_method)
-# print(http_layer_pkt.request_uri)
-# print(http_layer_pkt.request_version)
-# print(http_layer_pkt.request_full_uri)
-# print(http_layer_pkt.user_agent)
-# print(http_layer_pkt.referer)
