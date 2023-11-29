@@ -100,7 +100,7 @@ def change_mode():
             })
     return jsonify(
         {
-            'code': 200,
+            'code': 0,
             'msg': 'success',
             'data': None
         }
@@ -117,7 +117,7 @@ def find_usr():
         data = find_usr_from_db(page, number, name)
         return jsonify(
             {
-                'code': 200,
+                'code': 0,
                 'msg': 'success',
                 'data': data
             }
@@ -143,7 +143,7 @@ def find_log():
         print(data)
         return jsonify(
             {
-                'code': 200,
+                'code': 0,
                 'msg': 'success',
                 'data': data
             }
@@ -166,7 +166,7 @@ def delete_usr():
     if result:
         return jsonify(
             {
-                'code': 200,
+                'code': 0,
                 'msg': 'success',
                 'data': None
             }
@@ -186,8 +186,12 @@ def find_usr_from_db(page, number, name):
     sql = "SELECT * FROM user_uri_white_table WHERE user_name = %s"
     cursor.execute(sql, name)
     users = cursor.fetchall()
+    keys = ("id", "name", "url")
+    res = []
+    for user in users:
+        res.append(dict(zip(keys, user)))
     total = len(users)
-    return {'total': total, 'tuple': users[start_index:start_index+number]}
+    return {'total': total, 'list': res[start_index:start_index+number]}
 
 
 def find_log_from_db(page, number, name):
@@ -196,9 +200,12 @@ def find_log_from_db(page, number, name):
     sql = "SELECT * FROM disable_access_log_table WHERE user_name = %s"
     cursor.execute(sql, name)
     users = cursor.fetchall()
-    print(name)
+    keys = ("id", "name", "ip", "url")
+    res = []
+    for user in users:
+        res.append(dict(zip(keys, user)))
     total = len(users)
-    return {'total': total, 'tuple': users[start_index:start_index+number]}
+    return {'total': total, 'list': res[start_index:start_index+number]}
 
 
 def delete_usr_from_db(id):
