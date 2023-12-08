@@ -38,7 +38,6 @@ def learning_mode_for_http(pkt):
     sql = 'insert into ip_uri_static_table (request_ip, request_uri) values (\'%s\', \'%s\')' \
           % (request_src, request_full_uri)
     cursor.execute(sql)
-    db_connector.commit()
     # 将结果存入第三个表
     sql = 'select * from user_ip_dynamic_table where user_ip = \'%s\'' % request_src
     cursor.execute(sql)
@@ -48,12 +47,12 @@ def learning_mode_for_http(pkt):
               % (row[0], request_full_uri)
         cursor.execute(sql)
         result = cursor.fetchone()
+
         if result[0] >= 1:
             continue
         sql = 'insert into user_uri_white_table (user_name, user_uri) values (\'%s\',\'%s\')' \
               % (row[0], request_full_uri)
         cursor.execute(sql)
-        db_connector.commit()
 
 
 def intercept_mode_for_http(pkt):
@@ -71,7 +70,6 @@ def intercept_mode_for_http(pkt):
         sql = 'insert into disable_access_log_table (user_name, user_ip, user_uri) values (\'%s\',\'%s\',\'%s\')' \
               % ('unknown', request_src, request_full_uri)
         cursor.execute(sql)
-        db_connector.commit()
         return
     result = cursor.fetchone()
     sql = 'select * from user_uri_white_table where user_name = \'%s\' and user_uri = \'%s\'' \
@@ -82,7 +80,6 @@ def intercept_mode_for_http(pkt):
         sql = 'insert into disable_access_log_table (user_name, user_ip, user_uri) values (\'%s\',\'%s\',\'%s\')' \
               % (result[0], request_src, request_full_uri)
         cursor.execute(sql)
-        db_connector.commit()
     else:
         print("in white table")
 
@@ -103,11 +100,119 @@ def change_mode():
             })
     return jsonify(
         {
-            'code': 200,
+            'code': 0,
             'msg': 'success',
             'data': None
         }
     )
+
+
+@server.route('/find-usr', methods=['get'])
+def find_usr():
+    req = request.get_json()
+    page = req['page']
+    number = req['number']
+    name = req['name']
+    try:
+        data = find_usr_from_db(page, number, name)
+        return jsonify(
+            {
+                'code': 0,
+                'msg': 'success',
+                'data': data
+            }
+        )
+    except Exception as e:
+        print(e)
+        return jsonify(
+            {
+                'code': 1000,
+                'msg': 'select error'
+            }
+        )
+
+
+@server.route('/find-log', methods=['get'])
+def find_log():
+    req = request.get_json()
+    page = req['page']
+    number = req['number']
+    name = req['name']
+    try:
+        data = find_log_from_db(page, number, name)
+        print(data)
+        return jsonify(
+            {
+                'code': 0,
+                'msg': 'success',
+                'data': data
+            }
+        )
+    except Exception as e:
+        print(e)
+        return jsonify(
+            {
+                'code': 1000,
+                'msg': 'select error'
+            }
+        )
+
+
+@server.route('/delete-usr', methods=['delete'])
+def delete_usr():
+    req = request.get_json()
+    id = req['id']
+    result = delete_usr_from_db(id)
+    if result:
+        return jsonify(
+            {
+                'code': 0,
+                'msg': 'success',
+                'data': None
+            }
+        )
+    else:
+        return jsonify(
+            {
+                'code': 1000,
+                'msg': 'delete error'
+            }
+        )
+
+
+def find_usr_from_db(page, number, name):
+    cursor = db_connector.cursor()
+    start_index = (page - 1) * number
+    sql = "SELECT * FROM user_uri_white_table WHERE user_name = %s"
+    cursor.execute(sql, name)
+    users = cursor.fetchall()
+    keys = ("id", "name", "url")
+    res = []
+    for user in users:
+        res.append(dict(zip(keys, user)))
+    total = len(users)
+    return {'total': total, 'list': res[start_index:start_index+number]}
+
+
+def find_log_from_db(page, number, name):
+    cursor = db_connector.cursor()
+    start_index = (page - 1) * number
+    sql = "SELECT * FROM disable_access_log_table WHERE user_name = %s"
+    cursor.execute(sql, name)
+    users = cursor.fetchall()
+    keys = ("id", "name", "ip", "url")
+    res = []
+    for user in users:
+        res.append(dict(zip(keys, user)))
+    total = len(users)
+    return {'total': total, 'list': res[start_index:start_index+number]}
+
+
+def delete_usr_from_db(id):
+    cursor = db_connector.cursor()
+    sql = "DELETE FROM user_uri_white_table WHERE id = %s"
+    cursor.execute(sql, id)
+    return True
 
 
 def judge_mode():
@@ -121,6 +226,7 @@ def judge_mode():
             if now_mode == INTERCEPT_MODE:
                 if dynamic_record.judge_http(pkt):
                     intercept_mode_for_http(pkt)
+            # todo 测试用，记得删除
             time.sleep(5)
 
 
@@ -138,7 +244,8 @@ if __name__ == '__main__':
                                    port=int(args_config['mysql']['port']),
                                    user=args_config['mysql']['user'],
                                    password=args_config['mysql']['passwd'],
-                                   database=args_config['mysql']['db_name'])
+                                   database=args_config['mysql']['db_name'],
+                                   autocommit=True)
     t1 = Thread(target=judge_mode)
     t1.start()
     server.run()

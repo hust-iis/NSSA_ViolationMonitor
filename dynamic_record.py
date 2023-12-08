@@ -72,6 +72,7 @@ def init_config(config_file):
         config = yaml.load(f, Loader=yaml.Loader)
         return config
 
+
 # 持续监听并记录user_name 和 ip
 def record_user_ip():
     consumer = KafkaConsumer(args_config['mq']['traffic_topic'], group_id='group1',
