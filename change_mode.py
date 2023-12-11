@@ -158,8 +158,7 @@ def find_log():
 
 @server.route('/violation/delete-usr', methods=['delete'])
 def delete_usr():
-    req = request.get_json()
-    id = req['id']
+    id = int(request.args.get('id'))
     result = delete_usr_from_db(id)
     if result:
         return jsonify(
@@ -254,4 +253,4 @@ if __name__ == '__main__':
                                    autocommit=True)
     t1 = Thread(target=judge_mode)
     t1.start()
-    server.run(host="172.16.44.141",port=3318)
+    server.run(host="172.16.44.141", port=3318)
