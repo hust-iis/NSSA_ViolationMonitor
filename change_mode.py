@@ -254,4 +254,4 @@ if __name__ == '__main__':
                                    autocommit=True)
     t1 = Thread(target=judge_mode)
     t1.start()
-    server.run(port=3318)
+    server.run(host="172.16.44.141",port=3318)
