@@ -184,8 +184,9 @@ def find_usr_from_db(page, number, name):
         sql = "SELECT * FROM user_uri_white_table"
         cursor.execute(sql)
     else:
-        sql = "SELECT * FROM user_uri_white_table WHERE user_name = %s"
-        cursor.execute(sql, name)
+        sql = "SELECT * FROM user_uri_white_table WHERE user_name = \'%s\'" % name
+        print(sql)
+        cursor.execute(sql)
     users = cursor.fetchall()
     keys = ("id", "name", "url")
     res = []
@@ -202,8 +203,8 @@ def find_log_from_db(page, number, name):
         sql = "SELECT * FROM disable_access_log_table"
         cursor.execute(sql)
     else:
-        sql = "SELECT * FROM disable_access_log_table WHERE user_name = %s"
-        cursor.execute(sql, name)
+        sql = "SELECT * FROM disable_access_log_table WHERE user_name = \'%s\'" % name
+        cursor.execute(sql)
     users = cursor.fetchall()
     keys = ("id", "name", "ip", "url")
     res = []
@@ -253,4 +254,4 @@ if __name__ == '__main__':
                                    autocommit=True)
     t1 = Thread(target=judge_mode)
     t1.start()
-    server.run(host="172.16.44.141", port=3318)
+    server.run(port=3318)
