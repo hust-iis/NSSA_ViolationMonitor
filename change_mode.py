@@ -84,7 +84,7 @@ def intercept_mode_for_http(pkt):
         print("in white table")
 
 
-@server.route('/violation/change-mode', methods=['post'])
+@server.route('/api/violation/change-mode', methods=['post'])
 def change_mode():
     global now_mode
     req = request.get_json()
@@ -108,7 +108,7 @@ def change_mode():
     )
 
 
-@server.route('/violation/find-usr', methods=['get'])
+@server.route('/api/violation/find-usr', methods=['get'])
 def find_usr():
     global now_mode
     page = request.args.get('page')
@@ -134,7 +134,7 @@ def find_usr():
         )
 
 
-@server.route('/violation/find-log', methods=['get'])
+@server.route('/api/violation/find-log', methods=['get'])
 def find_log():
     global now_mode
     page = request.args.get('page')
@@ -160,7 +160,7 @@ def find_log():
         )
 
 
-@server.route('/violation/delete-usr', methods=['delete'])
+@server.route('/api/violation/delete-usr', methods=['delete'])
 def delete_usr():
     id = int(request.args.get('id'))
     result = delete_usr_from_db(id)
