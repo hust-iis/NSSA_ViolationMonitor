@@ -2,8 +2,8 @@ mq:
   server: localhost:9092
   traffic_topic: net-traffic
 mysql:
-  host: 222.20.126.128
-  port: 53306
-  user: root
-  passwd: pkg-passwd
-  db_name: violation_monitor
+  host: 172.16.44.141
+  port: 3366
+  user: nssa
+  passwd: c317c317
+  db_name: nssa-database

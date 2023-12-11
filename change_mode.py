@@ -14,6 +14,7 @@ now_mode = 0
 REQUEST_PACKET = 0
 RESPONSE_PACKET = 1
 server = flask.Flask(__name__)
+server.run(port=33322)
 
 
 def learning_mode_for_http(pkt):
@@ -84,13 +85,12 @@ def intercept_mode_for_http(pkt):
         print("in white table")
 
 
-@server.route('/change-mode', methods=['post'])
+@server.route('violation/change-mode', methods=['post'])
 def change_mode():
-    req = request.get_json()
     global now_mode
-    if int(req['status']) == LEARNING_MODE:
+    if int(request.args.get('status')) == LEARNING_MODE:
         now_mode = LEARNING_MODE
-    elif int(req['status']) == INTERCEPT_MODE:
+    elif int(request.args.get('status')) == INTERCEPT_MODE:
         now_mode = INTERCEPT_MODE
     else:
         return jsonify(
@@ -107,12 +107,11 @@ def change_mode():
     )
 
 
-@server.route('/find-usr', methods=['get'])
+@server.route('/violation/find-usr', methods=['get'])
 def find_usr():
-    req = request.get_json()
-    page = req['page']
-    number = req['number']
-    name = req['name']
+    page = request.args.get('page')
+    number = request.args.get('number')
+    name = request.args.get('name')
     try:
         data = find_usr_from_db(page, number, name)
         return jsonify(
@@ -132,12 +131,11 @@ def find_usr():
         )
 
 
-@server.route('/find-log', methods=['get'])
+@server.route('/violation/find-log', methods=['get'])
 def find_log():
-    req = request.get_json()
-    page = req['page']
-    number = req['number']
-    name = req['name']
+    page = request.args.get('page')
+    number = request.args.get('number')
+    name = request.args.get('name')
     try:
         data = find_log_from_db(page, number, name)
         print(data)
@@ -158,10 +156,9 @@ def find_log():
         )
 
 
-@server.route('/delete-usr', methods=['delete'])
+@server.route('/violation/delete-usr', methods=['delete'])
 def delete_usr():
-    req = request.get_json()
-    id = req['id']
+    id = request.args.get('id')
     result = delete_usr_from_db(id)
     if result:
         return jsonify(
