@@ -14,7 +14,6 @@ now_mode = 0
 REQUEST_PACKET = 0
 RESPONSE_PACKET = 1
 server = flask.Flask(__name__)
-server.run(port=33322)
 
 
 def learning_mode_for_http(pkt):
@@ -85,12 +84,14 @@ def intercept_mode_for_http(pkt):
         print("in white table")
 
 
-@server.route('violation/change-mode', methods=['post'])
+@server.route('/violation/change-mode', methods=['post'])
 def change_mode():
     global now_mode
-    if int(request.args.get('status')) == LEARNING_MODE:
+    req = request.get_json()
+    print(req['status'])
+    if int(req['status']) == LEARNING_MODE:
         now_mode = LEARNING_MODE
-    elif int(request.args.get('status')) == INTERCEPT_MODE:
+    elif int(req['status']) == INTERCEPT_MODE:
         now_mode = INTERCEPT_MODE
     else:
         return jsonify(
@@ -113,7 +114,7 @@ def find_usr():
     number = request.args.get('number')
     name = request.args.get('name')
     try:
-        data = find_usr_from_db(page, number, name)
+        data = find_usr_from_db(int(page), int(number), name)
         return jsonify(
             {
                 'code': 0,
@@ -137,8 +138,7 @@ def find_log():
     number = request.args.get('number')
     name = request.args.get('name')
     try:
-        data = find_log_from_db(page, number, name)
-        print(data)
+        data = find_log_from_db(int(page), int(number), name)
         return jsonify(
             {
                 'code': 0,
@@ -158,7 +158,8 @@ def find_log():
 
 @server.route('/violation/delete-usr', methods=['delete'])
 def delete_usr():
-    id = request.args.get('id')
+    req = request.get_json()
+    id = req['id']
     result = delete_usr_from_db(id)
     if result:
         return jsonify(
@@ -180,8 +181,12 @@ def delete_usr():
 def find_usr_from_db(page, number, name):
     cursor = db_connector.cursor()
     start_index = (page - 1) * number
-    sql = "SELECT * FROM user_uri_white_table WHERE user_name = %s"
-    cursor.execute(sql, name)
+    if name == "":
+        sql = "SELECT * FROM user_uri_white_table"
+        cursor.execute(sql)
+    else:
+        sql = "SELECT * FROM user_uri_white_table WHERE user_name = %s"
+        cursor.execute(sql, name)
     users = cursor.fetchall()
     keys = ("id", "name", "url")
     res = []
@@ -194,8 +199,12 @@ def find_usr_from_db(page, number, name):
 def find_log_from_db(page, number, name):
     cursor = db_connector.cursor()
     start_index = (page - 1) * number
-    sql = "SELECT * FROM disable_access_log_table WHERE user_name = %s"
-    cursor.execute(sql, name)
+    if name == "":
+        sql = "SELECT * FROM disable_access_log_table"
+        cursor.execute(sql)
+    else:
+        sql = "SELECT * FROM disable_access_log_table WHERE user_name = %s"
+        cursor.execute(sql, name)
     users = cursor.fetchall()
     keys = ("id", "name", "ip", "url")
     res = []
@@ -245,4 +254,4 @@ if __name__ == '__main__':
                                    autocommit=True)
     t1 = Thread(target=judge_mode)
     t1.start()
-    server.run()
+    server.run(host="172.16.44.141",port=3318)
