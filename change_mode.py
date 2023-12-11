@@ -10,7 +10,7 @@ import dynamic_record
 
 LEARNING_MODE = 0
 INTERCEPT_MODE = 1
-now_mode = 0
+now_mode = 1
 REQUEST_PACKET = 0
 RESPONSE_PACKET = 1
 server = flask.Flask(__name__)
@@ -110,6 +110,7 @@ def change_mode():
 
 @server.route('/violation/find-usr', methods=['get'])
 def find_usr():
+    global now_mode
     page = request.args.get('page')
     number = request.args.get('number')
     name = request.args.get('name')
@@ -119,6 +120,7 @@ def find_usr():
             {
                 'code': 0,
                 'msg': 'success',
+                'mode': now_mode,
                 'data': data
             }
         )
@@ -134,6 +136,7 @@ def find_usr():
 
 @server.route('/violation/find-log', methods=['get'])
 def find_log():
+    global now_mode
     page = request.args.get('page')
     number = request.args.get('number')
     name = request.args.get('name')
@@ -143,6 +146,7 @@ def find_log():
             {
                 'code': 0,
                 'msg': 'success',
+                'mode': now_mode,
                 'data': data
             }
         )
@@ -254,4 +258,4 @@ if __name__ == '__main__':
                                    autocommit=True)
     t1 = Thread(target=judge_mode)
     t1.start()
-    server.run(host="172.16.44.141",port=3318)
+    server.run(host="172.16.44.141", port=3318)
